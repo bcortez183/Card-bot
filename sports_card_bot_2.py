@@ -41,11 +41,11 @@ MIN_DISCOUNT     = 0.30
 SCAN_INTERVAL    = 10
 
 # Max listings to check per search
-MAX_LISTINGS     = 20
+MAX_LISTINGS     = 40
 
 # Telegram
-TELEGRAM_TOKEN   = os.getenv("TELEGRAM_BOT_TOKEN", "")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+TELEGRAM_TOKEN   = "8641980068:AAGQGSh1ooskkUPmg2DQz84pFjio3aiCh78”
+TELEGRAM_CHAT_ID = "8773798653"
 
 # ── SEARCH QUERIES ────────────────────────────────────────────────────────────
 # Each entry is a search term the bot will scan on eBay
@@ -80,8 +80,51 @@ SEARCH_QUERIES = [
     "Lewis Hamilton card PSA",
     "Charles Leclerc card PSA",
     "Lando Norris card PSA",
-]
+  # Non-Rookie Basketball
+"LeBron James PSA 10",
+"Kobe Bryant PSA 10",
+"Michael Jordan PSA 10",
+"Stephen Curry PSA 10",
+"Kevin Durant PSA 10",
 
+# Non-Rookie Football
+"Patrick Mahomes PSA 10",
+"Tom Brady PSA 10",
+"Josh Allen PSA 10",
+
+# Non-Rookie Baseball
+"Mike Trout PSA 10",
+"Shohei Ohtani PSA 10",
+"Mookie Betts PSA 10",
+
+# Non-Rookie F1
+"Max Verstappen 2023 PSA 10",
+"Lewis Hamilton 2021 PSA 10",
+
+# Raw Rookie Cards (ungraded)
+"Luka Doncic rookie raw",
+"Victor Wembanyama rookie raw",
+"Patrick Mahomes rookie raw",
+"Juan Soto rookie raw",
+"Max Verstappen rookie raw",
+  # Victor Wembanyama
+"Victor Wembanyama rookie PSA",
+"Victor Wembanyama PSA 10",
+"Victor Wembanyama rookie raw",
+# Lamine Yamal
+"Lamine Yamal rookie PSA",
+"Lamine Yamal PSA 10",
+"Lamine Yamal rookie raw",
+  # Aaron Judge
+"Aaron Judge rookie PSA",
+"Aaron Judge PSA 10",
+"Aaron Judge rookie raw",
+
+# Brock Purdy
+"Brock Purdy rookie PSA",
+"Brock Purdy PSA 10",
+"Brock Purdy rookie raw",
+]
 # ── HELPERS ───────────────────────────────────────────────────────────────────
 
 def now_pt():
