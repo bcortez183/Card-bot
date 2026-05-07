@@ -5,11 +5,12 @@ import requests
 import schedule
 import pytz
 import re
-
+sys.stdout.flush()
 # CONFIG
-MIN_DISCOUNT     = 0.10
+MIN_DISCOUNT     = 0.30
 SCAN_INTERVAL    = 10
-MAX_LISTINGS     = 20
+MAX_LISTINGS     = 50
+
 
 TELEGRAM_TOKEN   = "8641980068:AAGQGSh1ooskkUPmg2DQz84pFjio3aiCh78"
 TELEGRAM_CHAT_ID = "8773798653"
@@ -192,6 +193,7 @@ def check_for_deals(query):
 # MAIN SCAN
 
 def scan():
+    sys.stdout.flush()
     print("\n" + "="*55)
     print("  Sports Card Deal Scanner")
     print("  [" + now_pt().strftime("%Y-%m-%d %H:%M") + " PT]")
