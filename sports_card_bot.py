@@ -1,0 +1,230 @@
+import os
+import time
+import datetime
+import requests
+import schedule
+import pytz
+import re
+
+# CONFIG
+MIN_DISCOUNT     = 0.30
+SCAN_INTERVAL    = 10
+MAX_LISTINGS     = 20
+
+TELEGRAM_TOKEN   = "8641980068:AAGQGSh1ooskkUPmg2DQz84pFjio3aiCh78"
+TELEGRAM_CHAT_ID = "8773798653"
+
+SEARCH_QUERIES = [
+    # Basketball Rookies
+    "Luka Doncic rookie PSA",
+    "Ja Morant rookie PSA",
+    "Victor Wembanyama rookie PSA",
+    "Victor Wembanyama PSA 10",
+    "Victor Wembanyama rookie raw",
+    "LeBron James rookie PSA",
+    "Stephen Curry rookie PSA",
+    "Giannis Antetokounmpo PSA 10",
+    "Jayson Tatum rookie PSA",
+
+    # Basketball Non-Rookie
+    "LeBron James PSA 10",
+    "Kobe Bryant PSA 10",
+    "Michael Jordan PSA 10",
+    "Stephen Curry PSA 10",
+    "Kevin Durant PSA 10",
+
+    # Football Rookies
+    "Patrick Mahomes rookie PSA",
+    "Justin Jefferson rookie PSA",
+    "Joe Burrow rookie PSA",
+    "Josh Allen rookie PSA",
+    "CJ Stroud rookie PSA",
+    "Brock Purdy rookie PSA",
+    "Brock Purdy PSA 10",
+    "Brock Purdy rookie raw",
+
+    # Football Non-Rookie
+    "Patrick Mahomes PSA 10",
+    "Tom Brady PSA 10",
+    "Josh Allen PSA 10",
+
+    # Baseball Rookies
+    "Ronald Acuna rookie PSA",
+    "Juan Soto rookie PSA",
+    "Shohei Ohtani rookie PSA",
+    "Fernando Tatis rookie PSA",
+    "Julio Rodriguez rookie PSA",
+    "Aaron Judge rookie PSA",
+    "Aaron Judge PSA 10",
+    "Aaron Judge rookie raw",
+
+    # Baseball Non-Rookie
+    "Mike Trout PSA 10",
+    "Shohei Ohtani PSA 10",
+    "Mookie Betts PSA 10",
+
+    # F1
+    "Max Verstappen card PSA",
+    "Lewis Hamilton card PSA",
+    "Charles Leclerc card PSA",
+    "Lando Norris card PSA",
+    "Max Verstappen 2023 PSA 10",
+    "Lewis Hamilton 2021 PSA 10",
+    "Max Verstappen rookie raw",
+
+    # Soccer
+    "Lamine Yamal rookie PSA",
+    "Lamine Yamal PSA 10",
+    "Lamine Yamal rookie raw",
+]
+
+# HELPERS
+
+def now_pt():
+    return datetime.datetime.now(pytz.timezone("America/Los_Angeles"))
+
+def send_telegram(message):
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+        print(message)
+        return
+    try:
+        url = "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/sendMessage"
+        requests.post(url, data={"chat_id": TELEGRAM_CHAT_ID, "text": message}, timeout=10)
+    except Exception as e:
+        print("Telegram error: " + str(e))
+
+def clean_price(price_str):
+    try:
+        cleaned = re.sub(r"[^\d.]", "", str(price_str))
+        return float(cleaned)
+    except:
+        return None
+
+# EBAY SEARCH
+
+def search_ebay_sold(query):
+    try:
+        headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+        search  = query.replace(" ", "+")
+        url     = "https://www.ebay.com/sch/i.html?_nkw=" + search + "&LH_Sold=1&LH_Complete=1&_sop=13"
+        r       = requests.get(url, headers=headers, timeout=10)
+        prices  = []
+        matches = re.findall(r'\$[\d,]+\.?\d*', r.text)
+        for m in matches[:20]:
+            p = clean_price(m)
+            if p and 5 < p < 50000:
+                prices.append(p)
+        if len(prices) >= 3:
+            return sum(prices[:10]) / len(prices[:10])
+        return None
+    except Exception as e:
+        print("Sold search error: " + str(e))
+        return None
+
+def search_ebay_active(query):
+    try:
+        headers  = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+        search   = query.replace(" ", "+")
+        url      = "https://www.ebay.com/sch/i.html?_nkw=" + search + "&_sop=15&LH_BIN=1"
+        r        = requests.get(url, headers=headers, timeout=10)
+        listings = []
+        price_matches = re.findall(r'\$[\d,]+\.?\d*', r.text)
+        url_matches   = re.findall(r'href="(https://www\.ebay\.com/itm/[^"]+)"', r.text)
+        prices = []
+        for m in price_matches[:30]:
+            p = clean_price(m)
+            if p and 5 < p < 50000:
+                prices.append(p)
+        for i, price in enumerate(prices[:MAX_LISTINGS]):
+            url_link = url_matches[i] if i < len(url_matches) else "https://www.ebay.com/sch/i.html?_nkw=" + search
+            listings.append({"price": price, "url": url_link})
+        return listings
+    except Exception as e:
+        print("Active search error: " + str(e))
+        return []
+
+# DEAL DETECTION
+
+alerted_deals = set()
+
+def check_for_deals(query):
+    avg_sold = search_ebay_sold(query)
+    if not avg_sold:
+        print("  No sold data for: " + query)
+        return
+
+    listings = search_ebay_active(query)
+    if not listings:
+        print("  No listings for: " + query)
+        return
+
+    print("  " + query + " | Avg sold: $" + str(round(avg_sold, 2)) + " | Listings: " + str(len(listings)))
+
+    for listing in listings:
+        price    = listing["price"]
+        url      = listing["url"]
+        discount = (avg_sold - price) / avg_sold
+
+        if discount >= MIN_DISCOUNT:
+            deal_key = str(round(price)) + "_" + query[:20]
+            if deal_key in alerted_deals:
+                continue
+
+            profit_est = avg_sold - price
+            deal_msg   = (
+                "CARD DEAL FOUND!\n\n"
+                "Card: " + query + "\n"
+                "Listed: $" + str(round(price, 2)) + "\n"
+                "Avg sold: $" + str(round(avg_sold, 2)) + "\n"
+                "Discount: " + str(round(discount * 100)) + "% below market\n"
+                "Est. profit: ~$" + str(round(profit_est, 2)) + "\n"
+                "Link: " + url + "\n"
+                "Time: " + now_pt().strftime("%I:%M %p PT")
+            )
+
+            print("\n" + deal_msg)
+            send_telegram(deal_msg)
+            alerted_deals.add(deal_key)
+
+            if len(alerted_deals) > 500:
+                alerted_deals.clear()
+
+# MAIN SCAN
+
+def scan():
+    print("\n" + "="*55)
+    print("  Sports Card Deal Scanner")
+    print("  [" + now_pt().strftime("%Y-%m-%d %H:%M") + " PT]")
+    print("  Scanning " + str(len(SEARCH_QUERIES)) + " searches...")
+    print("="*55)
+
+    for query in SEARCH_QUERIES:
+        check_for_deals(query)
+        time.sleep(2)
+
+    print("\n  Scan complete. Next scan in " + str(SCAN_INTERVAL) + " minutes.\n")
+
+# ENTRY POINT
+
+if __name__ == "__main__":
+    print("Sports Card Deal Finder Bot")
+    print("Searches: " + str(len(SEARCH_QUERIES)))
+    print("Min discount to alert: " + str(int(MIN_DISCOUNT * 100)) + "% below market")
+    print("Scan interval: every " + str(SCAN_INTERVAL) + " minutes")
+    print("Telegram: " + ("enabled" if TELEGRAM_TOKEN else "disabled"))
+    print()
+
+    startup_msg = (
+        "Sports Card Deal Bot started!\n"
+        "Scanning " + str(len(SEARCH_QUERIES)) + " searches on eBay\n"
+        "Alerting when cards are " + str(int(MIN_DISCOUNT * 100)) + "% below market value\n"
+        "Sports: Basketball, Football, Baseball, F1, Soccer"
+    )
+    send_telegram(startup_msg)
+
+    scan()
+    schedule.every(SCAN_INTERVAL).minutes.do(scan)
+
+    while True:
+        schedule.run_pending()
+        time.sleep(30)
