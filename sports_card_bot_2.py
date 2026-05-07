@@ -44,8 +44,10 @@ SCAN_INTERVAL    = 10
 MAX_LISTINGS     = 40
 
 # Telegram
-TELEGRAM_TOKEN   = "8641980068:AAGQGSh1ooskkUPmg2DQz84pFjio3aiCh78”
-TELEGRAM_CHAT_ID = "8773798653"
+TELEGRAM_TOKEN   = 
+"8641980068:AAGQGSh1ooskkUPmg2DQz84pFjio3aiCh78”
+TELEGRAM_CHAT_ID = 
+"8773798653"
 
 # ── SEARCH QUERIES ────────────────────────────────────────────────────────────
 # Each entry is a search term the bot will scan on eBay
