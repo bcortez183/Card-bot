@@ -7,7 +7,7 @@ import pytz
 import re
 
 # CONFIG
-MIN_DISCOUNT     = 0.30
+MIN_DISCOUNT     = 0.10
 SCAN_INTERVAL    = 10
 MAX_LISTINGS     = 20
 
