@@ -10,7 +10,7 @@ import re
 sys.stdout.flush()
 
 # CONFIG
-MIN_DISCOUNT     = 0.5
+MIN_DISCOUNT     = 0.10
 SCAN_INTERVAL    = 5
 MAX_LISTINGS     = 60
 
