@@ -10,7 +10,7 @@ import re
 sys.stdout.flush()
 
 # CONFIG
-MIN_DISCOUNT     = 0.10
+MIN_DISCOUNT     = 0.03
 SCAN_INTERVAL    = 5
 MAX_LISTINGS     = 60
 
@@ -54,6 +54,7 @@ SEARCH_QUERIES = [
     "LeBron James prizm",
     "LeBron James refractor",
     "LeBron James mosaic",
+    "Lebron James"
 
     # Kobe Bryant
     "Kobe Bryant rookie PSA",
